@@ -106,7 +106,7 @@ Array
 )
 ```
 
-- getErrorBySlug - Повертає текст помилки українському по слагу, який можна отримати із getErrors або parse
+- getErrorBySlug - Повертає текст помилки українською мовою по слагу, який можна отримати із getErrors або parse
 
 ```php
 $error = $parser->getErrorBySlug('response_code');
