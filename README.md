@@ -111,5 +111,5 @@ Array
 ```php
 $error = $parser->getErrorBySlug('response_code');
 
-string(47) "Помилковий код відповіді."
+// string(47) "Помилковий код відповіді."
 ```
