@@ -85,6 +85,7 @@ class Rozetka
         return [
             'type' => $this->parseType,
             'data' => $this->parseData,
+            'errors' => $this->errors,
         ];
     }
 
@@ -101,10 +102,16 @@ class Rozetka
     private function parseProductCard() {
         $this->parseType = 'Product';
         // потрібен заголовок товару
-        $this->parseData['title'] = trim($this->crawler->filter('h1.product__title')->text());
+        if ($this->crawler->filter('h1.product__title')->count()) {
+            $this->parseData['title'] = trim($this->crawler->filter('h1.product__title')->text());
+        }
 
-        $jsonData = $this->crawler->filter('[data-module-key="script_seo_markupProduct"]')->text();
-        $jsonData = json_decode($jsonData, true);
+        $jsonData = [];
+
+        if ($this->crawler->filter('[data-module-key="script_seo_markupProduct"]')->count()) {
+            $jsonData = $this->crawler->filter('[data-module-key="script_seo_markupProduct"]')->text();
+            $jsonData = json_decode($jsonData, true);
+        }
 
         if (isset($jsonData['offers'])) {
             $offers = $jsonData['offers'];
