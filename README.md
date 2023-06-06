@@ -92,5 +92,24 @@ Array
 
 )
 */
+```
 
+- getErrors - повертає всі помилки. Можна отримати на різних етапах (до та після парсингу)
+```php
+$parser = new Rozetka('https://rozetka.com.ua/ua/fujifilm_16650');
+$response = $parser->parse();
+$errors = $parser->getErrors();
+
+Array
+(
+    [0] => response_code
+)
+```
+
+- getErrorBySlug - Повертає текст помилки українському по слагу, який можна отримати із getErrors або parse
+
+```php
+$error = $parser->getErrorBySlug('response_code');
+
+string(47) "Помилковий код відповіді."
 ```

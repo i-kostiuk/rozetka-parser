@@ -2,6 +2,7 @@
 
 namespace Rozetka;
 
+use GuzzleHttp\Exception\ClientException;
 use Rozetka\common\Constants;
 use GuzzleHttp\Client;
 use Symfony\Component\DomCrawler\Crawler;
@@ -37,12 +38,17 @@ class Rozetka
         $this->prepareParse();
     }
 
-    private function prepareParse() {
+    private function prepareParse() : void
+    {
         if (!$this->url) {
             $this->errors[] = Constants::ERROR_URL_IS_EMPTY;
         } else {
             $this->getClient();
-            $response = $this->client->request('GET', $this->url);
+            try {
+                $response = $this->client->request('GET', $this->url);
+            } catch (ClientException $e) {
+                $response = $e->getResponse();
+            }
             $this->statusCode = $response->getStatusCode();
             $this->body = $response->getBody();
             $this->headers = $response->getHeaders();
@@ -53,28 +59,44 @@ class Rozetka
         }
     }
 
-    private function getClient() {
+    private function getClient() : void
+    {
         $this->client = new Client();
     }
 
     /*
      * Ґеттери start
      * */
-    public function getStatusCode() {
+    public function getStatusCode() : ?int
+    {
         return $this->statusCode;
     }
 
-    public function getBody() {
+    public function getBody() : string
+    {
         return $this->body;
     }
 
-    public function getHeaders() {
+    public function getHeaders() : array
+    {
         return $this->headers;
     }
+
+    public function getErrors() : array
+    {
+        return $this->errors;
+    }
+
+    public function getErrorBySlug(string $slug) : ?string
+    {
+        return Constants::ERRORS[$slug] ?? false;
+    }
+
     /*
      * Ґеттери end
      * */
-    public function parse() {
+    public function parse() : array
+    {
         // спочатку потрібно зрозуміти яку сторінку парсимо, це буде таким собі - типом.
         $this->crawler = new Crawler($this->body);
 
@@ -89,7 +111,9 @@ class Rozetka
         ];
     }
 
-    private function isProductCard() {
+    private function isProductCard() : bool
+    {
+        $this->parseType = 'Undefined';
         // перевірка чи є заголовок товару
         $isProductTitle = (bool)$this->crawler->filter('h1.product__title')->count();
         // чи є на сторінці таби із опціями товару
@@ -99,7 +123,8 @@ class Rozetka
         return $isProductTitle && $isProductTabs && $isProductAbout;
     }
 
-    private function parseProductCard() {
+    private function parseProductCard() : void
+    {
         $this->parseType = 'Product';
         // потрібен заголовок товару
         if ($this->crawler->filter('h1.product__title')->count()) {
@@ -122,7 +147,7 @@ class Rozetka
                 $this->parseData['currency'] = $offers['priceCurrency'];
             }
             if (isset($offers['availability'])) {
-                $this->parseData['availability'] = $offers['availability'];
+                $this->parseData['availability'] = $offers['availability'] == 'http://schema.org/InStock';
             }
         }
 
@@ -135,7 +160,7 @@ class Rozetka
 
         if (isset($jsonData['aggregateRating'])) {
             $rating = $jsonData['aggregateRating'];
-            $this->parseData['rating'] = $rating;
+            $this->parseData['rating'] = $rating['ratingValue'];
         }
 
         if (isset($jsonData['description'])) {
@@ -143,7 +168,7 @@ class Rozetka
         }
 
         if (isset($jsonData['image'])) {
-            $this->parseData['image'] = $jsonData['image'];
+            $this->parseData['images'] = $jsonData['image'];
         }
 
         if (isset($jsonData['url'])) {
@@ -153,11 +178,6 @@ class Rozetka
         if (isset($jsonData['sku'])) {
             $this->parseData['sku'] = $jsonData['sku'];
         }
-
-        if (isset($jsonData['sku'])) {
-            $this->parseData['sku'] = $jsonData['sku'];
-        }
-
     }
 
 }
